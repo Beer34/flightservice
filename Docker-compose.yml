@@ -1,34 +1,41 @@
-version: "3.9"
+version: '3.8'
 
 services:
-  mysql:
+  mysql_db:
     image: mysql:8.0
     container_name: mysql_db
     restart: always
-    env_file:
-      - db.env
+    environment:
+      MYSQL_ROOT_PASSWORD: StrongRootPass123
+      MYSQL_DATABASE: flightdb
+      MYSQL_USER: flightuser
+      MYSQL_PASSWORD: StrongUserPass123
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   flightservice:
     build: .
-    container_name: flight_service
+    container_name: flightservice
     restart: always
-    depends_on:
-      - mysql
     ports:
       - "5000:5000"
     environment:
-      - DB_HOST=mysql
-      - DB_PORT=3306
-      - DB_USER=${MYSQL_USER}
-      - DB_PASSWORD=${MYSQL_PASSWORD}
-      - DB_NAME=${MYSQL_DATABASE}
-    env_file:
-      - db.env
+      DB_HOST: mysql_db
+      DB_PORT: 3306
+      DB_USER: flightuser
+      DB_PASSWORD: StrongUserPass123
+      DB_NAME: flightdb
+    depends_on:
+      mysql_db:
+        condition: service_healthy
 
 volumes:
   mysql_data:
