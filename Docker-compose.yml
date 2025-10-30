@@ -1,15 +1,12 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  mysql_db:
+  mysql:
     image: mysql:8.0
     container_name: mysql_db
     restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: flightdb
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
+    env_file:
+      - db.env
     ports:
       - "3306:3306"
     volumes:
@@ -18,17 +15,20 @@ services:
 
   flightservice:
     build: .
-    container_name: flightservice
+    container_name: flight_service
     restart: always
     depends_on:
-      - mysql_db
-    environment:
-      DB_HOST: mysql_db
-      DB_USER: user
-      DB_PASSWORD: password
-      DB_NAME: flightdb
+      - mysql
     ports:
       - "5000:5000"
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=${MYSQL_USER}
+      - DB_PASSWORD=${MYSQL_PASSWORD}
+      - DB_NAME=${MYSQL_DATABASE}
+    env_file:
+      - db.env
 
 volumes:
   mysql_data:
